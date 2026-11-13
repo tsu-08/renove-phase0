@@ -1,6 +1,6 @@
 // Phase 0 検証用 Service Worker
 // アプリ本体（同一オリジン）だけをキャッシュし、Firebase等の通信は素通しする。
-const CACHE_NAME = "phase0-v2";
+const CACHE_NAME = "phase0-v3";
 const ASSETS = [
   "./",
   "./index.html",

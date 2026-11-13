@@ -244,7 +244,19 @@ async function openProject(companyId) {
       });
     }
   } catch (e) {
-    $("saveMsg").textContent = "案件の読み込み失敗: " + e.code;
+    // 未作成の案件は、ルールが「既存ドキュメントの会社ID」を見るため
+    // 読み取り自体が permission-denied になる。その場合は作成を試みる。
+    // memo は含めない（既存案件のメモを空で上書きしないため）。
+    try {
+      await setDoc(projectRef, {
+        companyId,
+        title: "テスト案件",
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.email
+      }, { merge: true });
+    } catch (e2) {
+      $("saveMsg").textContent = "案件の読み込み失敗: " + e2.code;
+    }
   }
 
   // 案件（メモ）の購読：他端末の変更がここに反映される
