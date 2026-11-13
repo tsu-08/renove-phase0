@@ -38,6 +38,7 @@
   <h1>Phase 0 検証用</h1>
   <input id="email" type="email" placeholder="メールアドレス" autocomplete="username">
   <input id="password" type="password" placeholder="パスワード" autocomplete="current-password">
+  <button id="togglePwBtn" class="sub" type="button">パスワードを表示</button>
   <button id="loginBtn">ログイン</button>
   <button id="signupBtn" class="sub">新規登録</button>
   <div id="companySetup" hidden>
@@ -167,6 +168,12 @@ $("signupBtn").addEventListener("click", async () => {
   }
 });
 $("logoutBtn").addEventListener("click", () => signOut(auth));
+$("togglePwBtn").addEventListener("click", () => {
+  const pw = $("password");
+  const show = pw.type === "password";
+  pw.type = show ? "text" : "password";
+  $("togglePwBtn").textContent = show ? "パスワードを隠す" : "パスワードを表示";
+});
 $("saveCompanyBtn").addEventListener("click", async () => {
   const cid = $("companyIdInput").value.trim();
   if (!cid || !currentUser) return;
@@ -208,6 +215,7 @@ onAuthStateChanged(auth, async (user) => {
     // オフライン初回など。登録フォーム側で扱う
   }
   if (!companyId) {
+    authView.hidden = false;
     $("companySetup").hidden = false;
     appView.hidden = true;
     return;
@@ -221,6 +229,7 @@ async function openProject(companyId) {
   myCompanyId = companyId;
   const projectId = "test-" + companyId.replace(/[^a-zA-Z0-9_-]/g, "-");
   projectRef = doc(db, "projects", projectId);
+  authView.hidden = true;
   appView.hidden = false;
 
   try {
