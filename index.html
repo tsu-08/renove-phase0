@@ -291,18 +291,26 @@ async function openProject(companyId) {
 
   // 写真メタデータの購読
   const photosQuery = query(collection(projectRef, "photos"), orderBy("uploadedAt", "desc"), limit(50));
+  let photoRenderGen = 0;
   unsubscribers.push(onSnapshot(photosQuery, async (qs) => {
-    const box = $("photoList");
-    box.textContent = "";
-    for (const d of qs.docs) {
+    const gen = ++photoRenderGen;
+    const entries = await Promise.all(qs.docs.map(async (d) => {
       const p = d.data();
+      let url = "";
+      try { url = await getDownloadURL(ref(storage, p.storagePath)); } catch (e) { /* 表示だけの問題 */ }
+      return { name: p.name ?? "", url };
+    }));
+    if (gen !== photoRenderGen) return; // 古い描画は破棄する（重複表示の防止）
+    const box = $("photoList");
+    const frag = document.createDocumentFragment();
+    for (const e of entries) {
       const img = document.createElement("img");
-      img.alt = p.name ?? "";
-      try {
-        img.src = await getDownloadURL(ref(storage, p.storagePath));
-      } catch (e) { /* 表示だけの問題なので続行 */ }
-      box.appendChild(img);
+      img.alt = e.name;
+      if (e.url) img.src = e.url;
+      frag.appendChild(img);
     }
+    box.textContent = "";
+    box.appendChild(frag);
   }));
 
   renderQueueCount();
@@ -407,7 +415,7 @@ async function flushPhotoQueue() {
       try {
         const storagePath = `companies/${item.companyId}/projects/${item.projectId}/photos/${item.id}-${item.name}`;
         await uploadBytes(ref(storage, storagePath), item.blob, { contentType: item.type });
-        await addDoc(collection(projectRef, "photos"), {
+        await setDoc(doc(projectRef, "photos", item.id), {
           storagePath,
           name: item.name,
           uploadedBy: currentUser.email,
